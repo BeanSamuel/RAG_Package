@@ -11,13 +11,14 @@ class TextSplitterSelector(Enum):
     Chroma_CharacterTextSplitter = 2
 
 class TokenizerSelector(Enum):
-    voyage_large_2_instruct = 'voyage-large-2-instruct'
-    bert_base_uncased = 'google-bert/bert-base-uncased' #ok
-    bert_large_uncased = 'google-bert/bert-large-uncased' #ok
-    roberta_base = 'FacebookAI/roberta-base' #ok
-    llama_chinese_81M = 'p208p2002/llama-chinese-81M' #ok
-    Llama_2_7b_chat_hf = 'meta-llama/Llama-2-7b-chat-hf'
-    all_MiniLM_L6_v2 = 'sentence-transformers/all-MiniLM-L6-v2' #ok
+    voyage_large_2_instruct = 'voyage-large-2-instruct' 
+    bert_base_uncased = 'google-bert/bert-base-uncased' # ok
+    bert_large_uncased = 'google-bert/bert-large-uncased' # ok
+    roberta_base = 'FacebookAI/roberta-base' # ok
+    llama_chinese_81M = 'p208p2002/llama-chinese-81M' # ok
+    Llama_2_7b_chat_hf = 'meta-llama/Llama-2-7b-chat-hf' 
+    all_MiniLM_L6_v2 = 'sentence-transformers/all-MiniLM-L6-v2' # ok
+    # sentence_bert
     
 
 class RAG_DataLoader:
@@ -54,17 +55,22 @@ class RAG_DataLoader:
             self.all_splits.extend(splits)
                 
         except Exception as e:
-            raise f"Error processing file {file_path}: {e}"   
+            print(f"Error processing file {file_path}: {e}")   
 
     def save(self):
         if not self.all_splits:
             raise 'No Document is added'
-        self._chroma_db.add_documents(documents=self.all_splits)
+        tmp_splits = self.__split_arrays(chunk_size=40000)
+        for split in tmp_splits:
+            self._chroma_db.add_documents(documents=split)
         self._chroma_db.persist()
         self.all_splits.clear()
 
     def get_chromadb(self):
         return self._chroma_db
+
+    def __split_arrays(self,chunk_size):
+        return [self.all_splits[i:i + chunk_size] for i in range(0, len(self.all_splits), chunk_size)]
 
     def __load_tokenizer(self, tokenize_model, device):
         return HuggingFaceEmbeddings( model_name=tokenize_model.value, model_kwargs={'device': device} )
